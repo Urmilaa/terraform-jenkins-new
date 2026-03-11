@@ -19,7 +19,7 @@ pipeline {
 
         stage('Checkout Code') {
             steps {
-                git branch: 'main', url: 'https://github.com/your-repo/terraform-project.git'
+                git branch: 'main', url: 'https://github.com/Urmilaa/terraform-jenkins-new.git'
             }
         }
 
