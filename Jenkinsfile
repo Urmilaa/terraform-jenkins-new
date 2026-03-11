@@ -3,8 +3,11 @@ pipeline {
     agent any
 
     parameters {
-        booleanParam(name: 'autoApprove', defaultValue: false, description: 'Automatically run apply after generating plan?')
-        booleanParam(name: 'destroyInfra', defaultValue: false, description: 'Destroy infrastructure after apply?')
+        booleanParam(
+            name: 'confirmDestroy',
+            defaultValue: false,
+            description: 'Confirm to destroy Terraform infrastructure'
+        )
     }
 
     environment {
@@ -14,78 +17,46 @@ pipeline {
 
     stages {
 
-        stage('Checkout') {
+        stage('Checkout Code') {
             steps {
-                dir('terraform') {
-                    git branch: 'main', url: 'https://github.com/Urmilaa/Terraform-Jenkins1.git'
-                }
+                git branch: 'main', url: 'https://github.com/your-repo/terraform-project.git'
             }
         }
 
         stage('Terraform Init') {
             steps {
-                dir('terraform') {
-                    sh 'terraform init'
-                }
+                sh 'terraform init'
             }
         }
 
-        stage('Terraform Plan') {
+        stage('Terraform Validate') {
             steps {
-                dir('terraform') {
-                    sh 'terraform plan -out=tfplan'
-                    sh 'terraform show -no-color tfplan > tfplan.txt'
-                }
+                sh 'terraform validate'
             }
         }
 
-        stage('Approval') {
-
-            when {
-                not { equals expected: true, actual: params.autoApprove }
-            }
-
+        stage('Terraform Plan Destroy') {
             steps {
-                script {
-                    def plan = readFile 'terraform/tfplan.txt'
-
-                    input message: "Do you want to apply the plan?",
-                    parameters: [
-                        text(name: 'Terraform Plan', defaultValue: plan, description: 'Review Terraform Plan')
-                    ]
-                }
-            }
-        }
-
-        stage('Terraform Apply') {
-            steps {
-                dir('terraform') {
-                    sh 'terraform apply -input=false tfplan'
-                }
-            }
-        }
-         stage('Destroy Approval') {
-
-            when {
-                equals expected: true, actual: params.destroyInfra
-            }
-
-            steps {
-                input message: "Are you sure you want to destroy the infrastructure?"
+                sh 'terraform plan -destroy'
             }
         }
 
         stage('Terraform Destroy') {
-
             when {
-                equals expected: true, actual: params.destroyInfra
+                expression { params.confirmDestroy == true }
             }
-
             steps {
-                dir('terraform') {
-                    sh 'terraform destroy -auto-approve'
-                }
+                sh 'terraform destroy -auto-approve'
             }
+        }
+    }
+
+    post {
+        success {
+            echo 'Terraform destroy completed successfully'
+        }
+        failure {
+            echo 'Terraform destroy failed'
         }
     }
 }
