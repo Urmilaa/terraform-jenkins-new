@@ -51,8 +51,8 @@ pipeline {
            
         }
          stage('Approval') {
-            when {
-                expression { params.confirmDestroy == true }
+             when {
+                not { equals expected: true, actual: params.confirmDestroy }
             }
             steps {
                 script {
