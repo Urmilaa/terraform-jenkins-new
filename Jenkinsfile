@@ -50,21 +50,22 @@ pipeline {
             }
            
         }
-         stage('Approval') {
-             when {
-                not { equals expected: true, actual: params.confirmDestroy }
-            }
-            steps {
-                script {
-                    def plan = readFile 'terraform/tfplan.txt'
+    stage('Approval') {
+    when {
+        equals expected: true, actual: params.confirmDestroy
+    }
 
-                    input message: "Approve Terraform Destroy?",
-                    parameters: [
-                        text(name: 'Terraform Plan', defaultValue: plan, description: 'Review Destroy Plan')
-                    ]
-                }
-            }
+    steps {
+        script {
+            def plan = readFile 'terraform/tfplan.txt'
+
+            input message: "Approve Terraform Destroy?",
+            parameters: [
+                text(name: 'Terraform Plan', defaultValue: plan, description: 'Review Destroy Plan')
+            ]
         }
+    }
+}
         stage('Terraform Destroy') {
              
             when {
